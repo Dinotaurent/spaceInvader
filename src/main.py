@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 # Inicia pygame
 pygame.init()
@@ -22,19 +23,31 @@ fondo = pygame.image.load("fondo3.jpg")
 
 
 # Variables enemigo
-imagen_enemigo = pygame.image.load("ovni.png")
-enemigo_x = random.randint(0, 1216)
-enemigo_y = random.randint(64, 260)
-enemigo_x_cambio = 0.6
-enemigo_y_cambio = 80
+imagen_enemigo = []
+enemigo_x = []
+enemigo_y = []
+enemigo_x_cambio = []
+enemigo_y_cambio = []
+cantidad_enemigos = 8
+
+for e in range(cantidad_enemigos):
+    imagen_enemigo.append(pygame.image.load("ovni.png"))
+    enemigo_x.append(random.randint(0, 1216))
+    enemigo_y.append(random.randint(64, 260))
+    enemigo_x_cambio.append(0.4)
+    enemigo_y_cambio.append(80)
+
 
 # Variables proyectil
 imagen_pro = pygame.image.load("laser.png")
 pro_x = 0
 pro_y = 640
 pro_x_cambio = 0
-pro_y_cambio = 1
+pro_y_cambio = 3
 pro_visible = False
+
+# Puntaje
+puntaje = 0
 
 
 # Funcion jugador
@@ -43,8 +56,8 @@ def jugador(x, y):
 
 
 # Funcion enemigo
-def enemigo(x, y):
-    pantalla.blit(imagen_enemigo, (x, y))
+def enemigo(x, y, ene):
+    pantalla.blit(imagen_enemigo[ene], (x, y))
 
 
 # Funcion disparar proyectil
@@ -52,6 +65,22 @@ def disparar_pro(x, y):
     global pro_visible
     pro_visible = True
     pantalla.blit(imagen_pro, (x + 16, y + 10))
+
+
+# Funcion detectar colisiones
+def hay_colisiones(x_1, y_1, x_2, y_2):
+    distancia = math.sqrt(math.pow(x_1 - x_2, 2) + math.pow(y_1 - y_2, 2))
+    if distancia < 27:
+        return True
+    else:
+        return False
+
+
+# Respawn enemigo
+def respawn_enemigo():
+    enemigo_x = random.randint(0, 1216)
+    enemigo_y = random.randint(64, 260)
+    return enemigo_x, enemigo_y
 
 
 # Ciclo del juego
@@ -100,7 +129,26 @@ while se_ejecuta:
         jugador_x = 1216
 
     # Modificar ubicacion enemigo
-    enemigo_x += enemigo_x_cambio
+    for e in range(cantidad_enemigos):
+        enemigo_x[e] += enemigo_x_cambio[e]
+
+    # Mantenar dentro de bordes enemigo
+        if enemigo_x[e] <= 0:
+            enemigo_x_cambio[e] = 0.5
+            enemigo_y[e] += enemigo_y_cambio[e]
+        elif enemigo_x[e] >= 1216:
+            enemigo_x_cambio[e] = -0.5
+            enemigo_y[e] += enemigo_y_cambio[e]
+
+        # Colision
+        colision = hay_colisiones(enemigo_x[e], enemigo_y[e], pro_x, pro_y)
+        if colision:
+            pro_y = 640
+            pro_visible = False
+            puntaje += 1
+            enemigo_x[e], enemigo_y[e] = respawn_enemigo()
+
+        enemigo(enemigo_x[e], enemigo_y[e], e)
 
     # Movimiento proyectil
     if pro_y <= -32:
@@ -110,16 +158,7 @@ while se_ejecuta:
         disparar_pro(pro_x, pro_y)
         pro_y -= pro_y_cambio
 
-    # Mantenar dentro de bordes enemigo
-    if enemigo_x <= 0:
-        enemigo_x_cambio = 0.5
-        enemigo_y += enemigo_y_cambio
-    elif enemigo_x >= 1216:
-        enemigo_x_cambio = -0.5
-        enemigo_y += enemigo_y_cambio
-
     jugador(jugador_x, jugador_y)
-    enemigo(enemigo_x, enemigo_y)
 
     # Actualizar
     pygame.display.update()
