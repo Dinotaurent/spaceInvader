@@ -1,6 +1,8 @@
 import pygame
 import random
 import math
+from pygame import mixer
+import io
 
 # Inicia pygame
 pygame.init()
@@ -13,6 +15,12 @@ se_ejecuta = True
 pygame.display.set_caption("Space invaders")
 icono = pygame.image.load("icon.png")
 pygame.display.set_icon(icono)
+
+# Agregar musica
+mixer.music.load("MusicaFondo.mp3")
+mixer.music.set_volume(0.3)
+mixer.music.play(-1)
+
 
 # Variables Jugador
 imagen_jugador = pygame.image.load("nave.png")
@@ -46,8 +54,38 @@ pro_x_cambio = 0
 pro_y_cambio = 3
 pro_visible = False
 
+
+# Funcion string a bytes
+def fuente_bytes(fuente):
+    # Abre el archivo TTF para lectura binaria
+    with open(fuente, "rb") as f:
+        # Lee todos los bytes del archivo y almacena en una variable
+        ttf_bytes = f.read()
+    # Crea un objeto BytesIO a partir de los bytes del archivo TTF
+    return io.BytesIO(ttf_bytes)
+
+
 # Puntaje
 puntaje = 0
+fuente_como_bytes = fuente_bytes("FreeSansBold.ttf")
+fuente = pygame.font.Font(fuente_como_bytes, 32)
+texto_x = 10
+texto_y = 10
+
+
+# Texto final
+fuente_final = pygame.font.Font(fuente_como_bytes, 60)
+
+
+def texto_final():
+    mi_fuente_final = fuente_final.render("GAME OVER!!", True, (255, 255, 255))
+    pantalla.blit(mi_fuente_final, (460, 280))
+
+
+# Funcion mostrar_puntaje
+def mostrar_puntaje(x, y):
+    texto = fuente.render(f"Puntaje: {puntaje}", True, (255, 255, 255))
+    pantalla.blit(texto, (x, y))
 
 
 # Funcion jugador
@@ -110,7 +148,10 @@ while se_ejecuta:
 
             # Evento disparo
             if evento.key == pygame.K_x:
+                sonido_disparo = mixer.Sound("disparo.mp3")
+
                 if not pro_visible:
+                    sonido_disparo.play()
                     pro_x = jugador_x
                     disparar_pro(pro_x, pro_y)
 
@@ -130,6 +171,14 @@ while se_ejecuta:
 
     # Modificar ubicacion enemigo
     for e in range(cantidad_enemigos):
+
+        # Game over
+        if enemigo_y[e] > 620:
+            for k in range(cantidad_enemigos):
+                enemigo_y[k] = 1000
+            texto_final()
+            break
+
         enemigo_x[e] += enemigo_x_cambio[e]
 
     # Mantenar dentro de bordes enemigo
@@ -143,9 +192,11 @@ while se_ejecuta:
         # Colision
         colision = hay_colisiones(enemigo_x[e], enemigo_y[e], pro_x, pro_y)
         if colision:
+            sonido_colision = mixer.Sound("Golpe.mp3")
+            sonido_colision.play()
             pro_y = 640
             pro_visible = False
-            puntaje += 1
+            puntaje += 2
             enemigo_x[e], enemigo_y[e] = respawn_enemigo()
 
         enemigo(enemigo_x[e], enemigo_y[e], e)
@@ -159,6 +210,8 @@ while se_ejecuta:
         pro_y -= pro_y_cambio
 
     jugador(jugador_x, jugador_y)
+
+    mostrar_puntaje(texto_x, texto_y)
 
     # Actualizar
     pygame.display.update()
