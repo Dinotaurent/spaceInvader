@@ -81,7 +81,9 @@ while se_ejecuta:
 
             # Evento disparo
             if evento.key == pygame.K_x:
-                disparar_pro(jugador_x, pro_y)
+                if not pro_visible:
+                    pro_x = jugador_x
+                    disparar_pro(pro_x, pro_y)
 
         # Evento soltar tecla
         if evento.type == pygame.KEYUP:
@@ -101,8 +103,11 @@ while se_ejecuta:
     enemigo_x += enemigo_x_cambio
 
     # Movimiento proyectil
+    if pro_y <= -32:
+        pro_y = 640
+        pro_visible = False
     if pro_visible:
-        disparar_pro(jugador_x, pro_y)
+        disparar_pro(pro_x, pro_y)
         pro_y -= pro_y_cambio
 
     # Mantenar dentro de bordes enemigo
